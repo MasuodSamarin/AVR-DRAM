@@ -1,7 +1,7 @@
 #DRAM LIBRARY FOR AVR
 
--linear addresing
--requires only one port + 5-6 control pins and 8bit memory with CBR refresh mode.
+- linear addresing
+- requires only one port + 5-6 control pins and 8bit memory with CBR refresh mode.
 
 #SETUP
 Before setting up memory several conditions must be met:
@@ -9,7 +9,6 @@ Before setting up memory several conditions must be met:
 - define DRAM_ADDRESS_PINS to value corresponding with used memory
 - define DRAM_INIT_SEQUENCE_CYCLES to value corresponding to datasheet of used memory
 - define all control pins and full 8 bit port for data operation 
--
 
 #optional
 - modify RefreshTimerInt() with corresponding DRAM_REFRESH_INTERRUPT macro for most optimal refresh peroid corresponding to datasheet
