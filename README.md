@@ -17,7 +17,6 @@ Before setting up memory several conditions must be met:
 - if memory doesn't want to work correctly uncomment some nop's in DramDelayHook() inline function
 
 #todo
-- test read function (probably require 2 nops instead of 1)
 - fpm r/w/rmw
 - rmw
 - code for testing memory
