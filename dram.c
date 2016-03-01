@@ -19,7 +19,7 @@ void MemoryInit(void)
 	___DDR(DATA_PORT) = 0xff;
 	
 #if defined(DRAM_LARGE_MEMORY_MODE) && defined(DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT)
-	___DDR(HIGH_ADDRESS_PORT) |= ((2<<(DRAM_ADDRESS_PINS-8)) - 1); 
+	___DDR(HIGH_ADDRESS_PORT) |= ((1<<(DRAM_ADDRESS_PINS-8)) - 1); 
 #endif
 	
 	CAS_HI;
@@ -61,11 +61,11 @@ void MemoryInit(void)
 			
 		#if defined(DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> (DRAM_ADDRESS_PINS + 8)) & ((2<<(DRAM_ADDRESS_PINS-8)) - 1));
+			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> (DRAM_ADDRESS_PINS + 8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			___PORT(DATA_PORT) = (addr >> DRAM_ADDRESS_PINS);
 			
 		#else
-			___PORT(DATA_PORT) = ((addr >> (DRAM_ADDRESS_PINS + 8)) & ((2<<(DRAM_ADDRESS_PINS-8)) - 1));
+			___PORT(DATA_PORT) = ((addr >> (DRAM_ADDRESS_PINS + 8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			
 			LA2_LO;
 			
@@ -80,13 +80,13 @@ void MemoryInit(void)
 
 		#if defined(DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> 8) & ((2<<(DRAM_ADDRESS_PINS-8)) - 1));
+			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			___PORT(DATA_PORT) = addr;
 			
 		#else
 			LA2_HI;
 		
-			___PORT(DATA_PORT) = ((addr >> 8) & ((2<<(DRAM_ADDRESS_PINS-8)) - 1));
+			___PORT(DATA_PORT) = ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			
 			LA2_LO;
 			
@@ -140,11 +140,11 @@ void MemoryInit(void)
 		
 		#if defined(DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> DRAM_ADDRESS_PINS+8) & ((2<<(DRAM_ADDRESS_PINS-8)) - 1));
+			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> DRAM_ADDRESS_PINS+8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			___PORT(DATA_PORT) = (addr >> DRAM_ADDRESS_PINS);
 			
 		#else
-			___PORT(DATA_PORT) = ((addr >> (DRAM_ADDRESS_PINS + 8)) & ((2<<(DRAM_ADDRESS_PINS-8)) - 1));
+			___PORT(DATA_PORT) = ((addr >> (DRAM_ADDRESS_PINS + 8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			
 			LA2_LO;
 			
@@ -159,13 +159,13 @@ void MemoryInit(void)
 		
 		#if defined(DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> 8) & ((2<<(DRAM_ADDRESS_PINS-8)) - 1));
+			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			___PORT(DATA_PORT) = addr;
 			
 		#else
 			LA2_HI;
 			
-			___PORT(DATA_PORT) = ((addr >> 8) & ((2<<(DRAM_ADDRESS_PINS-8)) - 1));
+			___PORT(DATA_PORT) = ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			
 			LA2_LO;
 			
