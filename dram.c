@@ -22,6 +22,17 @@ void MemoryInit(void)
 	___DDR(HIGH_ADDRESS_PORT) |= ((1<<(DRAM_ADDRESS_PINS-8)) - 1); 
 #endif
 	
+	// can be merged to one call if using same port 
+	___DDR(RAS_PORT) |= (1<<RAS_PIN);
+	___DDR(CAS_PORT) |= (1<<CAS_PIN);
+	___DDR(WE_PORT) |= (1<<WE_PIN);
+	___DDR(OE_PORT) |= (1<<OE_PIN);
+	___DDR(LA1_PORT) |= (1<<LA1_PIN);
+	
+#ifndef DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT
+	___DDR(LA2_PORT) |= (1<<LA2_PIN);
+#endif
+	
 	CAS_HI;
 	RAS_HI;
 	
