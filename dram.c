@@ -108,17 +108,14 @@ void MemoryInit(void)
 			
 			___DDR(DATA_PORT) = 0x00;
 			
-		#ifdef DRAM_CLEAR_PULLUPS_BEFORE_READING
-			___PORT(DATA_PORT) = 0x00;
-		#endif
-			
 			// CAS must switch from high to low and remain low.
 
 			CAS_LO;
 
 			// Data appears at the data output pins of the memory device. The time at which the data appears depends on when RAS , CAS and OE went low, and when the address is supplied.
 			
-			asm volatile("nop"::); // absolute delay due to 1,5 input read cycle delay
+			___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 addidional delay cycle
+			asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock - strongly Tcac dependent
 			DramDelayHook();
 			
 			tmp = ___PIN(DATA_PORT);
@@ -151,7 +148,7 @@ void MemoryInit(void)
 		
 		#if defined(DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> DRAM_ADDRESS_PINS+8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> (DRAM_ADDRESS_PINS+8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			___PORT(DATA_PORT) = (addr >> DRAM_ADDRESS_PINS);
 			
 		#else
@@ -232,17 +229,14 @@ void MemoryInit(void)
 		
 			___DDR(DATA_PORT) = 0x00;
 		
-		#ifdef DRAM_CLEAR_PULLUPS_BEFORE_READING
-			___PORT(DATA_PORT) = 0x00;
-		#endif
-		
 			// CAS must switch from high to low and remain low.
 
 			CAS_LO;
 
 			// Data appears at the data output pins of the memory device. The time at which the data appears depends on when RAS , CAS and OE went low, and when the address is supplied.
 		
-			asm volatile("nop"::); // absolute delay due to 1,5 input read cycle delay
+			___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 addidional delay cycle
+			asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock - strongly Tcac dependent 
 			DramDelayHook();
 		
 			tmp = ___PIN(DATA_PORT); 

@@ -6,7 +6,6 @@
 //#define DRAM_REFRESH_CYCLES 256 // set if not equally 2^DRAM_ADDRESS_PINS // can also be set to 256 if inlined refresh cycles multiple times in ISR for faster operation
 
 //#define DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT // instead of latch
-//#define DRAM_CLEAR_PULLUPS_BEFORE_READING // some memories cannot handle 50k pullups left by previous write operations
 
 #define DRAM_REFRESH_INTERRUPT TIMER0_OVF_vect // corresponding to timer initialized in RefreshTimerInt()
 
@@ -18,7 +17,7 @@
 	#error "<64kB memories not supported"
 #elif DRAM_ADDRESS_PINS > 16
 	#error ">4GB memories not supported"
-#elif DRAM_ADDRESS_PINS == 8
+#elif DRAM_ADDRESS_PINS != 8
 	#define DRAM_LARGE_MEMORY_MODE
 #endif
 
@@ -125,9 +124,15 @@ void MemoryInit(void); 	// Initialization sequence depends on datasheet of targe
 #ifdef DRAM_LARGE_MEMORY_MODE
 	uint8_t DramRead(uint32_t addr);
 	void DramWrite(uint32_t addr, uint8_t dat);
+	
+	void DramPageRead(uint32_t addr, uint8_t count, uint8_t *Dst);
+	void DramPageWrite(uint32_t addr, uint8_t count, uint8_t *Dst);
 #else
 	uint8_t DramRead(uint16_t addr);
 	void DramWrite(uint16_t addr, uint8_t dat);
+	
+	void DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst);
+	void DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst);
 #endif
 
 
