@@ -5,7 +5,7 @@
 #define DRAM_INIT_SEQUENCE_CYCLES 8 // check datasheet
 //#define DRAM_REFRESH_CYCLES 256 // set if not equally 2^DRAM_ADDRESS_PINS // can also be set to 256 if inlined refresh cycles multiple times in ISR for faster operation
 
-//#define DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT // instead of latch
+//#define DRAM_HIGH_ADDRESS_PORT // instead of latch
 
 #define DRAM_REFRESH_INTERRUPT TIMER0_OVF_vect // corresponding to timer initialized in RefreshTimerInt()
 
@@ -42,7 +42,7 @@
 	#define LA1_PORT D // A,B,C,D ... port naming
 	#define LA1_PIN 4 // 1,2,3,4 ... pin naming
 
-#ifndef DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT
+#ifndef DRAM_HIGH_ADDRESS_PORT
 	#define LA2_PORT D // A,B,C,D ... port naming
 	#define LA2_PIN 5 // 1,2,3,4 ... pin naming
 #endif
@@ -98,7 +98,7 @@
 #define LA1_LO ___PORT(LA1_PORT) &= ~(1<<LA1_PIN)
 #define LA1_FAST_TOG ___PIN(LA1_PORT) = (1<<LA1_PIN)
 
-#ifndef DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT
+#ifndef DRAM_HIGH_ADDRESS_PORT
 	#define LA2_HI ___PORT(LA2_PORT) |= (1<<LA2_PIN)
 	#define LA2_LO ___PORT(LA2_PORT) &= ~(1<<LA2_PIN)
 	#define LA2_FAST_TOG ___PIN(LA2_PORT) = (1<<LA2_PIN)
@@ -106,15 +106,12 @@
 
 
 // for slower memories // delays are used in all parts of the code although only 
-// one of the functions requires one cycle delay more (probably read function)
-// correct timing with minimum overhead can be obtained by experimental placing 
-// delays directly in the suspicious functions
+// one of the functions requires one cycle delay more correct timing with minimum 
+// overhead can be obtained by experimental placing delays directly in the suspicious functions
 inline void DramDelayHook(void)  
 {
-	//asm volatile("nop"::);
-	//asm volatile("nop"::);
-	//asm volatile("nop"::);
-	//asm volatile("nop"::);
+	//asm volatile("nop"::); // 1 cycle
+	//asm volatile("rjmp .+0"::); // 2 cycles
 }
 
 
@@ -122,17 +119,23 @@ void RefreshTimerInt(void);
 void MemoryInit(void); 	// Initialization sequence depends on datasheet of target memory
 
 #ifdef DRAM_LARGE_MEMORY_MODE
+	uint8_t DramDirectRead(uint16_t row, uint16_t column); // avoid expensive shift operations on address
+	void DramDirectWrite(uint16_t row, uint16_t column, uint8_t dat); // avoid expensive shift operations on address
+	
 	uint8_t DramRead(uint32_t addr);
 	void DramWrite(uint32_t addr, uint8_t dat);
 	
-	void DramPageRead(uint32_t addr, uint8_t count, uint8_t *Dst);
-	void DramPageWrite(uint32_t addr, uint8_t count, uint8_t *Dst);
+	void DramDirectPageRead(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst);
+	void DramDirectPageWrite(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst);
+	
+	void DramPageRead(uint32_t addr, uint16_t count, uint8_t *Dst);
+	void DramPageWrite(uint32_t addr, uint16_t count, uint8_t *Dst);
 #else
 	uint8_t DramRead(uint16_t addr);
 	void DramWrite(uint16_t addr, uint8_t dat);
 	
-	void DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst);
-	void DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst);
+	void DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst); // this function will read n + 1 bytes
+	void DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst); // this function will write n + 1 bytes
 #endif
 
 
