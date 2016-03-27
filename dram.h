@@ -5,12 +5,12 @@
 #define DRAM_INIT_SEQUENCE_CYCLES 8 // check datasheet
 //#define DRAM_REFRESH_CYCLES 256 // set if not equally 2^DRAM_ADDRESS_PINS // can also be set to 256 if inlined refresh cycles multiple times in ISR for faster operation
 
-//#define DRAM_HIGH_ADDRESS_PORT // instead of latch
+//#define DRAM_HIGH_ADDRESS_PORT // instead of second latch
 
 #define DRAM_REFRESH_INTERRUPT TIMER0_OVF_vect // corresponding to timer initialized in RefreshTimerInt()
 
 #ifndef DRAM_REFRESH_CYCLES
-	#define DRAM_REFRESH_CYCLES (1<<DRAM_ADDRESS_PINS)
+	#define DRAM_REFRESH_CYCLES (1UL<<DRAM_ADDRESS_PINS)
 #endif
 
 #if DRAM_ADDRESS_PINS < 8
@@ -21,7 +21,7 @@
 	#define DRAM_LARGE_MEMORY_MODE
 #endif
 
-#ifdef DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT
+#ifdef DRAM_HIGH_ADDRESS_PORT
 	#define HIGH_ADDRESS_PORT C // A,B,C,D ... port naming 
 #endif
 
@@ -134,8 +134,11 @@ void MemoryInit(void); 	// Initialization sequence depends on datasheet of targe
 	uint8_t DramRead(uint16_t addr);
 	void DramWrite(uint16_t addr, uint8_t dat);
 	
-	void DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst); // this function will read n + 1 bytes
-	void DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst); // this function will write n + 1 bytes
+	void _DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst); // this function will read n + 1 bytes
+	void _DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst); // this function will write n + 1 bytes
+	
+	inline void DramPageRead(uint16_t addr, uint16_t count, uint8_t *Dst) { _DramPageRead(addr, count-1, Dst); }
+	inline void DramPageWrite(uint16_t addr, uint16_t count, uint8_t *Dst) { _DramPageWrite(addr, count-1, Dst); } 
 #endif
 
 

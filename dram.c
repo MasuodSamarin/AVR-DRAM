@@ -4,7 +4,6 @@
 
 #include "dram.h"
 
-
 void RefreshTimerInt(void)
 {
 	// timer 0 overflow used for example
@@ -42,7 +41,7 @@ void MemoryInit(void)
 		CAS_LO;		// CAS lo
 		RAS_LO;		// RAS lo
 		
-		//asm volatile("nop"::);
+		DramDelayHook();
 			
 		CAS_HI;		// CAS hi
 		RAS_HI;	// RAS hi
@@ -63,16 +62,19 @@ void MemoryInit(void)
 		
 	#if !defined(DRAM_HIGH_ADDRESS_PORT)
 		LA2_HI;
+	#else
+		register uint8_t rtmp;
+		___PORT(HIGH_ADDRESS_PORT) &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
 	#endif
 		
 		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 		{
-			// The row address must be applied to the address input pins on the memory device for the prescribed
-			// amount of time before RAS goes low and held after RAS goes low.
-			
 		#if defined(DRAM_HIGH_ADDRESS_PORT)
+		
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((row >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			
-			___PORT(HIGH_ADDRESS_PORT) |= (row >> 8); // & ( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
 			___PORT(DATA_PORT) = (uint8_t)row;
 			
 		#else
@@ -82,16 +84,15 @@ void MemoryInit(void)
 			
 			___PORT(DATA_PORT) = (uint8_t)row;
 		#endif
-			
-			// RAS must go from high to low and remain low.
-			
-			RAS_LO;
 
-			// A column address must be applied to the address input pins on the memory device for the prescribed amount of time and held after CAS goes low.
+			RAS_LO;
 
 		#if defined(DRAM_HIGH_ADDRESS_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= (column >> 8); // & ( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((column >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
 			___PORT(DATA_PORT) = (uint8_t)column;
 			
 		#else
@@ -107,20 +108,14 @@ void MemoryInit(void)
 			LA1_LO; // lock cas address
 			
 			___DDR(DATA_PORT) = 0x00;
-			
-			// CAS must switch from high to low and remain low.
 
 			CAS_LO;
-
-			// Data appears at the data output pins of the memory device. The time at which the data appears depends on when RAS , CAS and OE went low, and when the address is supplied.
 			
-			___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 addidional delay cycle
+			___PORT(DATA_PORT) = 0x00; // clear pullups for the next latch-up and give 1 additional delay cycle
 			asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock - strongly Tcac dependent
 			DramDelayHook();
 			
 			tmp = ___PIN(DATA_PORT);
-			
-			// Before the read cycle can be considered complete, CAS and RAS must return to their inactive states.
 
 			CAS_HI;
 			RAS_HI;
@@ -141,15 +136,18 @@ void MemoryInit(void)
 		
 	#if !defined(DRAM_HIGH_ADDRESS_PORT)
 		LA2_HI;
+	#else
+		register uint8_t rtmp;
 	#endif
 		
 		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
 		{
-			// The row address must be applied to the address input pins on the memory device for the prescribed amount of time before RAS goes low and be held for a period of time.
-		
 		#if defined(DRAM_HIGH_ADDRESS_PORT)
+		
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((row >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
 			
-			___PORT(HIGH_ADDRESS_PORT) |= (row >> 8); // & ( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
 			___PORT(DATA_PORT) = (uint8_t)row;
 			
 		#else
@@ -160,15 +158,14 @@ void MemoryInit(void)
 			___PORT(DATA_PORT) = (uint8_t)row;
 		#endif
 		
-			// RAS must go from high to low.
-
 			RAS_LO;
 
-			// A column address must be applied to the address input pins on the memory device for the prescribed amount of time after RAS goes low and before CAS goes low and held for the prescribed time.
-		
 		#if defined(DRAM_HIGH_ADDRESS_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= (column >> 8); // & ( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((column >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
 			___PORT(DATA_PORT) = (uint8_t)column;
 			
 		#else
@@ -183,18 +180,12 @@ void MemoryInit(void)
 			
 			LA1_LO; // lock cas address
 		
-			// Data must be applied to the data input pins the prescribed amount of time before CAS goes low  and held.
-		
 			___PORT(DATA_PORT) = dat;
-		
-			// CAS must switch from high to low.
 
 			CAS_LO;
 		
 			DramDelayHook();
 
-			// Before the write cycle can be considered complete, CAS and RAS must return to their inactive states.
-		
 			CAS_HI;
 			RAS_HI;
 		}
@@ -212,6 +203,8 @@ void MemoryInit(void)
 		
 	#if !defined(DRAM_HIGH_ADDRESS_PORT)
 		LA2_HI;
+	#else
+		register uint8_t rtmp;
 	#endif
 		
 		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
@@ -221,7 +214,10 @@ void MemoryInit(void)
 			
 		#if defined(DRAM_HIGH_ADDRESS_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> (DRAM_ADDRESS_PINS + 8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((addr >> (DRAM_ADDRESS_PINS+8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
 			___PORT(DATA_PORT) = (addr >> DRAM_ADDRESS_PINS);
 			
 		#else
@@ -240,7 +236,10 @@ void MemoryInit(void)
 
 		#if defined(DRAM_HIGH_ADDRESS_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
 			___PORT(DATA_PORT) = addr;
 			
 		#else
@@ -263,7 +262,7 @@ void MemoryInit(void)
 
 			// Data appears at the data output pins of the memory device. The time at which the data appears depends on when RAS , CAS and OE went low, and when the address is supplied.
 			
-			___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 addidional delay cycle
+			___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 additional delay cycle
 			asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock - strongly Tcac dependent
 			DramDelayHook();
 			
@@ -289,6 +288,8 @@ void MemoryInit(void)
 		
 	#if !defined(DRAM_HIGH_ADDRESS_PORT)
 		LA2_HI;
+	#else
+		register uint8_t rtmp;
 	#endif
 		
 		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
@@ -297,7 +298,10 @@ void MemoryInit(void)
 		
 		#if defined(DRAM_HIGH_ADDRESS_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> (DRAM_ADDRESS_PINS+8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((addr >> (DRAM_ADDRESS_PINS+8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
 			___PORT(DATA_PORT) = (addr >> DRAM_ADDRESS_PINS);
 			
 		#else
@@ -316,7 +320,10 @@ void MemoryInit(void)
 		
 		#if defined(DRAM_HIGH_ADDRESS_PORT)
 			
-			___PORT(HIGH_ADDRESS_PORT) |= ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
 			___PORT(DATA_PORT) = addr;
 			
 		#else
@@ -349,11 +356,298 @@ void MemoryInit(void)
 		
 	}
 
-	void DramDirectPageRead(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst);
-	void DramDirectPageWrite(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst);
+	void DramDirectPageRead(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst)
+	{
+		WE_HI;
+		OE_LO;
+		
+		LA1_HI;
+		
+	#if !defined(DRAM_HIGH_ADDRESS_PORT)
+		LA2_HI;
+	#else
+		register uint8_t rtmp;
+	#endif
+		
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		{
+		#if defined(DRAM_HIGH_ADDRESS_PORT)
+			
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((row >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+			___PORT(DATA_PORT) = (uint8_t)row;
+			
+		#else
+			___PORT(DATA_PORT) = (row >> 8); // & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+			LA2_LO;
+			
+			___PORT(DATA_PORT) = (uint8_t)row;
+		#endif
+			
+			RAS_LO;
+			
+			for(uint16_t i = 0; i < count; i++)
+			{
+				LA1_HI;
+			#if defined(DRAM_HIGH_ADDRESS_PORT)
+			
+				rtmp = ___PORT(HIGH_ADDRESS_PORT);
+				rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+				___PORT(HIGH_ADDRESS_PORT) = rtmp | ((column >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+				
+				___PORT(DATA_PORT) = (uint8_t)column;
+			
+			#else
+				LA2_HI;
+			
+				___PORT(DATA_PORT) = (column >> 8); // & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+				LA2_LO;
+			
+				___PORT(DATA_PORT) = (uint8_t)column;
+			#endif
+				column++;
+				
+				LA1_LO; // lock cas address
+				
+				___DDR(DATA_PORT) = 0x00;
+				
+				CAS_LO;
+				
+				___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 additional delay cycle
+				asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock - strongly Tcac dependent
+				DramDelayHook();
+				
+				Dst[i] = ___PIN(DATA_PORT);
+				
+				CAS_HI;
+			} 
+			
+			RAS_HI;
+		}
+		
+		___DDR(DATA_PORT) = 0xff; // set back to output state
+	}
+	
+	void DramDirectPageWrite(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst)
+	{
+		OE_HI;
+		WE_LO;
+		
+		LA1_HI;
+		
+	#if !defined(DRAM_HIGH_ADDRESS_PORT)
+		LA2_HI;
+	#else
+		register uint8_t rtmp;
+	#endif
+		
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		{
+		#if defined(DRAM_HIGH_ADDRESS_PORT)
+			
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((row >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+			___PORT(DATA_PORT) = (uint8_t)row;
+			
+		#else
+			___PORT(DATA_PORT) = (row >> 8); // & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+			LA2_LO;
+			
+			___PORT(DATA_PORT) = (uint8_t)row;
+		#endif
+			
+			RAS_LO;
+			
+			for(uint16_t i = 0; i < count; i++)
+			{
+				LA1_HI;
+			#if defined(DRAM_HIGH_ADDRESS_PORT)
+			
+				rtmp = ___PORT(HIGH_ADDRESS_PORT);
+				rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+				___PORT(HIGH_ADDRESS_PORT) = rtmp | ((column >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+				
+				___PORT(DATA_PORT) = (uint8_t)column;
+			
+			#else
+				LA2_HI;
+			
+				___PORT(DATA_PORT) = (column >> 8); // & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+				LA2_LO;
+			
+				___PORT(DATA_PORT) = (uint8_t)column;
+			#endif
+				column++;
+				
+				LA1_LO; // lock cas address
+				
+				___PORT(DATA_PORT) = Dst[i]; 
+				
+				CAS_LO;
+				
+				DramDelayHook();
+				
+				CAS_HI;
+			} 
+			
+			RAS_HI;
+		}
+	}
 
-	void DramPageRead(uint32_t addr, uint16_t count, uint8_t *Dst);
-	void DramPageWrite(uint32_t addr, uint16_t count, uint8_t *Dst);
+	void DramPageRead(uint32_t addr, uint16_t count, uint8_t *Dst)
+	{
+		WE_HI;
+		OE_LO;
+		
+		LA1_HI;
+		
+	#if !defined(DRAM_HIGH_ADDRESS_PORT)
+		LA2_HI;
+	#else
+		register uint8_t rtmp;
+	#endif
+		
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		{
+		#if defined(DRAM_HIGH_ADDRESS_PORT)
+			
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((addr >> (DRAM_ADDRESS_PINS+8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+			___PORT(DATA_PORT) = (addr >> DRAM_ADDRESS_PINS);
+			
+		#else
+			___PORT(DATA_PORT) = ((addr >> (DRAM_ADDRESS_PINS+8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+			LA2_LO;
+			
+			___PORT(DATA_PORT) = (addr >> DRAM_ADDRESS_PINS);
+		#endif
+			
+			RAS_LO;
+			
+			for(uint16_t i = 0; i < count; i++)
+			{
+				LA1_HI;
+			#if defined(DRAM_HIGH_ADDRESS_PORT)
+				
+				rtmp = ___PORT(HIGH_ADDRESS_PORT);
+				rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+				___PORT(HIGH_ADDRESS_PORT) = rtmp | ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+				
+				___PORT(DATA_PORT) = (uint8_t)addr;
+				
+			#else
+				LA2_HI;
+				
+				___PORT(DATA_PORT) = ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+				
+				LA2_LO;
+				
+				___PORT(DATA_PORT) = (uint8_t)addr;
+			#endif
+				addr++;
+				
+				LA1_LO; // lock cas address
+				
+				___DDR(DATA_PORT) = 0x00;
+				
+				CAS_LO;
+				
+				___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 additional delay cycle
+				asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock - strongly Tcac dependent
+				DramDelayHook();
+				
+				Dst[i] = ___PIN(DATA_PORT);
+				
+				CAS_HI;
+			}
+			
+			RAS_HI;
+		}
+		
+		___DDR(DATA_PORT) = 0xff; // set back to output state
+	}
+	
+	void DramPageWrite(uint32_t addr, uint16_t count, uint8_t *Dst)
+	{
+		
+		OE_HI;
+		WE_LO;
+		
+		LA1_HI;
+		
+	#if !defined(DRAM_HIGH_ADDRESS_PORT)
+		LA2_HI;
+	#else
+		register uint8_t rtmp;
+	#endif
+		
+		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+		{
+		#if defined(DRAM_HIGH_ADDRESS_PORT)
+				
+			rtmp = ___PORT(HIGH_ADDRESS_PORT);
+			rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+			___PORT(HIGH_ADDRESS_PORT) = rtmp | ((addr >> (DRAM_ADDRESS_PINS+8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+			___PORT(DATA_PORT) = (addr >> DRAM_ADDRESS_PINS);
+			
+		#else
+			___PORT(DATA_PORT) = ((addr >> (DRAM_ADDRESS_PINS + 8)) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+			LA2_LO;
+			
+			___PORT(DATA_PORT) = (addr >> DRAM_ADDRESS_PINS);
+		#endif
+			
+			RAS_LO;
+			
+			for(uint16_t i = 0; i < count; i++)
+			{
+				LA1_HI;
+			#if defined(DRAM_HIGH_ADDRESS_PORT)
+				
+				rtmp = ___PORT(HIGH_ADDRESS_PORT);
+				rtmp &= ~( (1<<(DRAM_ADDRESS_PINS-8)) - 1);
+				___PORT(HIGH_ADDRESS_PORT) = rtmp | ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+				
+				___PORT(DATA_PORT) = (uint8_t)addr;
+			
+			#else
+				LA2_HI;
+			
+				___PORT(DATA_PORT) = ((addr >> 8) & ((1<<(DRAM_ADDRESS_PINS-8)) - 1));
+			
+				LA2_LO;
+			
+				___PORT(DATA_PORT) = (uint8_t)addr;
+			#endif
+				addr++;
+				
+				LA1_LO; // lock cas address
+				
+				___PORT(DATA_PORT) = Dst[i]; 
+				
+				CAS_LO;
+				
+				DramDelayHook();
+				
+				CAS_HI;
+			} 
+			
+			RAS_HI;
+		}
+	}
 
 #else // 64k memory
 	
@@ -390,7 +684,7 @@ void MemoryInit(void)
 
 			// Data appears at the data output pins of the memory device. The time at which the data appears depends on when RAS , CAS and OE went low, and when the address is supplied.
 		
-			___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 addidional delay cycle
+			___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 additional delay cycle
 			asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock - strongly Tcac dependent 
 			DramDelayHook();
 		
@@ -446,7 +740,7 @@ void MemoryInit(void)
 		}
 	}
 	
-	void DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst)
+	void _DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst)
 	{
 		WE_HI;
 		OE_LO;
@@ -470,7 +764,7 @@ void MemoryInit(void)
 				
 				CAS_LO;
 				
-				___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 addidional delay cycle
+				___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 additional delay cycle
 				asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock - strongly Tcac dependent
 				DramDelayHook();
 				
@@ -484,7 +778,7 @@ void MemoryInit(void)
 		
 	}
 	
-	void DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst)
+	void _DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst)
 	{
 		OE_HI;
 		WE_LO;
@@ -504,7 +798,7 @@ void MemoryInit(void)
 				___PORT(DATA_PORT) = (uint8_t)addr++;
 				LA1_LO; // lock cas address
 				
-				___PORT(DATA_PORT) = *(Dst+i); // i++
+				___PORT(DATA_PORT) = Dst[i]; // i++
 				
 				CAS_LO;
 				

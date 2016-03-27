@@ -1,7 +1,7 @@
 #DRAM LIBRARY FOR AVR
 
 - linear addresing
-- requires only one port + 5-6 control pins and 8bit memory with CBR refresh mode.
+- requires only one port + 5-6 control pins and 8bit memory with CBR refresh mode (+ 1-2 latches).
 
 #SETUP
 Before setting up memory several conditions must be met:
@@ -16,11 +16,8 @@ Before setting up memory several conditions must be met:
 - if you prefer to have only one latch at a cost of another port (pins 0,1,2 up to DRAM_ADDRESS_PINS - 8) define DRAM_HIGH_ADDRESS_PINS_ON_ANOTHER_PORT macro
 - if memory doesn't want to work correctly uncomment some nop's in DramDelayHook() inline function
 
-#notes
-page mode in 64k memories will read/write n + 1 bytes (count)
-
 #todo
-- fpm r/w/rmw
 - rmw
 - code for testing memory
 - DRAM_FAST_TOGGLE for more families than mega88
+- tmphaddrclrorw
