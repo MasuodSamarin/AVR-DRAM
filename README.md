@@ -20,4 +20,3 @@ Before setting up memory several conditions must be met:
 - rmw
 - code for testing memory
 - DRAM_FAST_TOGGLE for more families than mega88
-- tmphaddrclrorw
