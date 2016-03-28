@@ -823,22 +823,12 @@ ISR(DRAM_REFRESH_INTERRUPT) // CAS before RAS refresh
 #endif
 	do
 	{
-	#ifdef DRAM_FAST_TOGGLE
-		CAS_FAST_TOG;
-		RAS_FAST_TOG;
+		CAS_FAST_TOG_L;
+		RAS_FAST_TOG_L;
 	
 		DramDelayHook();
 	
-		CAS_FAST_TOG;
-		RAS_FAST_TOG;
-	#else
-		CAS_LO; 	// CAS lo
-		RAS_LO; 	// RAS lo
-		
-		DramDelayHook();
-		
-		CAS_HI; 	// CAS hi
-		RAS_HI; 	// RAS hi
-	#endif
+		CAS_FAST_TOG_H;
+		RAS_FAST_TOG_H;
 	} while(i--);
 }

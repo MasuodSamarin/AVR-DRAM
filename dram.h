@@ -55,7 +55,6 @@
 	#define DRAM_FAST_TOGGLE // allow fast xor'ing outputs by writing to PINn registers // for burst sequences
 #endif
 
-
 #ifndef ___DDR
 	#define ___DDR(x) ___XDDR(x)
 #endif
@@ -80,33 +79,47 @@
 
 #define RAS_HI ___PORT(RAS_PORT) |= (1<<RAS_PIN)
 #define RAS_LO ___PORT(RAS_PORT) &= ~(1<<RAS_PIN)
-#define RAS_FAST_TOG ___PIN(RAS_PORT) = (1<<RAS_PIN)
+
+#ifdef DRAM_FAST_TOGGLE
+	#define RAS_FAST_TOG_L ___PIN(RAS_PORT) = (1<<RAS_PIN)
+	#define RAS_FAST_TOG_H ___PIN(RAS_PORT) = (1<<RAS_PIN)
+#else
+	#define RAS_FAST_TOG_L RAS_LO
+	#define RAS_FAST_TOG_H RAS_HI
+#endif
 
 #define CAS_HI ___PORT(CAS_PORT) |= (1<<CAS_PIN)
 #define CAS_LO ___PORT(CAS_PORT) &= ~(1<<CAS_PIN)
-#define CAS_FAST_TOG ___PIN(CAS_PORT) = (1<<CAS_PIN)
+
+#ifdef DRAM_FAST_TOGGLE
+	#define CAS_FAST_TOG_L ___PIN(CAS_PORT) = (1<<CAS_PIN)
+	#define CAS_FAST_TOG_H ___PIN(CAS_PORT) = (1<<CAS_PIN)
+#else
+	#define CAS_FAST_TOG_L CAS_LO
+	#define CAS_FAST_TOG_H CAS_HI
+#endif
 
 #define WE_HI ___PORT(WE_PORT) |= (1<<WE_PIN)
 #define WE_LO ___PORT(WE_PORT) &= ~(1<<WE_PIN)
-#define WE_FAST_TOG ___PIN(WE_PORT) = (1<<WE_PIN)
+//#define WE_FAST_TOG ___PIN(WE_PORT) = (1<<WE_PIN)
 
 #define OE_HI ___PORT(OE_PORT) |= (1<<OE_PIN)
 #define OE_LO ___PORT(OE_PORT) &= ~(1<<OE_PIN)
-#define OE_FAST_TOG ___PIN(OE_PORT) = (1<<OE_PIN)
+//#define OE_FAST_TOG ___PIN(OE_PORT) = (1<<OE_PIN)
 
 #define LA1_HI ___PORT(LA1_PORT) |= (1<<LA1_PIN)
 #define LA1_LO ___PORT(LA1_PORT) &= ~(1<<LA1_PIN)
-#define LA1_FAST_TOG ___PIN(LA1_PORT) = (1<<LA1_PIN)
+//#define LA1_FAST_TOG ___PIN(LA1_PORT) = (1<<LA1_PIN)
 
 #ifndef DRAM_HIGH_ADDRESS_PORT
 	#define LA2_HI ___PORT(LA2_PORT) |= (1<<LA2_PIN)
 	#define LA2_LO ___PORT(LA2_PORT) &= ~(1<<LA2_PIN)
-	#define LA2_FAST_TOG ___PIN(LA2_PORT) = (1<<LA2_PIN)
+	//#define LA2_FAST_TOG ___PIN(LA2_PORT) = (1<<LA2_PIN)
 #endif
 
 
 // for slower memories // delays are used in all parts of the code although only 
-// one of the functions requires one cycle delay more correct timing with minimum 
+// one of the functions requires one cycle delay for more correct timing with minimum 
 // overhead can be obtained by experimental placing delays directly in the suspicious functions
 inline void DramDelayHook(void)  
 {
