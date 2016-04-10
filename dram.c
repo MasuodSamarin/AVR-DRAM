@@ -424,12 +424,13 @@ void MemoryInit(void)
 				Dst[i] = ___PIN(DATA_PORT);
 				
 				CAS_HI;
+				
+				___DDR(DATA_PORT) = 0xff; // set back to output
 			} 
 			
 			RAS_HI;
 		}
 		
-		___DDR(DATA_PORT) = 0xff; // set back to output state
 	}
 	
 	void DramDirectPageWrite(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst)
@@ -570,12 +571,13 @@ void MemoryInit(void)
 				Dst[i] = ___PIN(DATA_PORT);
 				
 				CAS_HI;
+				
+				___DDR(DATA_PORT) = 0xff; // set back to output
 			}
 			
 			RAS_HI;
 		}
 		
-		___DDR(DATA_PORT) = 0xff; // set back to output state
 	}
 	
 	void DramPageWrite(uint32_t addr, uint16_t count, uint8_t *Dst)
@@ -771,6 +773,8 @@ void MemoryInit(void)
 				Dst[i] = ___PIN(DATA_PORT);
 				
 				CAS_HI;
+				
+				___DDR(DATA_PORT) = 0xff; // set back to output
 			} while(i++ != count);
 			
 			RAS_HI;

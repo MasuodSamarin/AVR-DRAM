@@ -154,5 +154,4 @@ void MemoryInit(void); 	// Initialization sequence depends on datasheet of targe
 	inline void DramPageWrite(uint16_t addr, uint16_t count, uint8_t *Dst) { _DramPageWrite(addr, count-1, Dst); } 
 #endif
 
-
 #endif /* DRAM_H_ */

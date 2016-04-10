@@ -83,7 +83,6 @@ uint32_t WalkingOneTest(uint32_t memsize)
 	{
 		tmp = DramRead(i);
 		
-		
 		if (i % 16 < 8)
 			if (tmp != (1 << i % 8))
 			{
@@ -118,8 +117,6 @@ uint32_t OwnAddressTest(uint32_t memsize)
 		if (tmp != (uint8_t)i)
 		{
 			corrupted_bytes++;
-
-
 			//verbose ???
 		}
 	}
@@ -130,7 +127,6 @@ uint32_t OwnAddressTest(uint32_t memsize)
 uint32_t FpmTest(uint32_t memsize, uint8_t pattern_A, uint8_t pattern_B)
 {
 	uint32_t corrupted_bytes = 0;
-
 	uint8_t TT[256];
 
 	for (uint16_t i = 0; i < 256; i++)
@@ -201,7 +197,6 @@ uint32_t RefreshTest(uint32_t memsize, uint8_t pattern, uint16_t delay_sec)
 		if (tmp != pattern)
 		{
 			corrupted_bytes++;
-
 			//verbose???
 		}
 	}
