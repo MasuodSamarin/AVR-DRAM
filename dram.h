@@ -5,7 +5,12 @@
 #define DRAM_INIT_SEQUENCE_CYCLES 8 // check datasheet
 //#define DRAM_REFRESH_CYCLES 256 // set if not equally 2^DRAM_ADDRESS_PINS // can also be set to 256 if inlined refresh cycles multiple times in ISR for faster operation
 
-//#define DRAM_HIGH_ADDRESS_PORT // instead of second latch
+#define DRAM_EDO_MODE
+
+//#define DRAM_SEPARATE_L_ADDR // separate low address port from data port // required for EDO mode operation // no LA1 required
+#define DRAM_SEPARATE_H_ADDR // separate high address port (>64k memories) form L_ADDR  // no LA2 required
+
+//#define DRAM_FORCE_SLOW_STROBES // force 2 cycle sbi/cbi signalling instead of 1 cycle PINx hardware xor // can fix some memory timming issues
 
 #define DRAM_REFRESH_INTERRUPT TIMER0_OVF_vect // corresponding to timer initialized in RefreshTimerInt()
 
@@ -21,11 +26,9 @@
 	#define DRAM_LARGE_MEMORY_MODE
 #endif
 
-#ifdef DRAM_HIGH_ADDRESS_PORT
-	#define HIGH_ADDRESS_PORT C // A,B,C,D ... port naming 
+#if defined(DRAM_EDO_MODE)&&!defined(DRAM_SEPARATE_L_ADDR)
+	#warning "to prevent short circuits - do not use EDO memories with fpm read without separating address lines from data lines"
 #endif
-
-	#define DATA_PORT B // A,B,C,D ... port naming // port used for data i/o and ADDRESSing
 
 	#define RAS_PORT D // A,B,C,D ... port naming 
 	#define RAS_PIN 0 // 1,2,3,4 ... pin naming
@@ -39,20 +42,35 @@
 	#define OE_PORT D // A,B,C,D ... port naming
 	#define OE_PIN 3 // 1,2,3,4 ... pin naming
 
-	#define LA1_PORT D // A,B,C,D ... port naming
-	#define LA1_PIN 4 // 1,2,3,4 ... pin naming
 
-#ifndef DRAM_HIGH_ADDRESS_PORT
-	#define LA2_PORT D // A,B,C,D ... port naming
-	#define LA2_PIN 5 // 1,2,3,4 ... pin naming
-#endif
+	#define DATA_PORT B // A,B,C,D ... port naming // port used for data i/o and ADDRESSing
+
+	#ifdef DRAM_SEPARATE_L_ADDR
+		#define ADDRL_PORT A // A,B,C,D ... port naming
+	#else
+		#define ADDRL_PORT DATA_PORT 
+	
+		#define LA1_PORT D // A,B,C,D ... port naming
+		#define LA1_PIN 4 // 1,2,3,4 ... pin naming
+	#endif
+
+	#ifdef DRAM_SEPARATE_H_ADDR
+		#define ADDRH_PORT C // A,B,C,D ... port naming
+	#else
+		#define ADDRH_PORT ADDRL_PORT // A,B,C,D ... port naming
+	
+		#define LA2_PORT D // A,B,C,D ... port naming
+		#define LA2_PIN 5 // 1,2,3,4 ... pin naming
+	#endif
 
 // add any valid mcu
 #if defined(__AVR_ATmega48__)||defined(__AVR_ATmega48P__)||defined(__AVR_ATmega48PA__)||defined(__AVR_ATmega48PB__)\
 ||defined(__AVR_ATmega88__)||defined(__AVR_ATmega88P__)||defined(__AVR_ATmega88PA__)||defined(__AVR_ATmega88PB__)\
 ||defined(__AVR_ATmega168__)||defined(__AVR_ATmega168P__)||defined(__AVR_ATmega168PA__)||defined(__AVR_ATmega168PB__)\
 ||defined(__AVR_ATmega328__)||defined(__AVR_ATmega328P__)||defined(__AVR_ATmega328PB__)
-	#define DRAM_FAST_TOGGLE // allow fast xor'ing outputs by writing to PINn registers // for burst sequences
+	#ifndef DRAM_FORCE_SLOW_STROBES
+		#define DRAM_FAST_TOGGLE // allow fast xor'ing outputs by writing to PINn registers // for burst sequences
+	#endif
 #endif
 
 #ifndef ___DDR
@@ -75,7 +93,6 @@
 #ifndef ___XPIN
 	#define ___XPIN(x) (PORT ## x)
 #endif
-
 
 #define RAS_HI ___PORT(RAS_PORT) |= (1<<RAS_PIN)
 #define RAS_LO ___PORT(RAS_PORT) &= ~(1<<RAS_PIN)
@@ -107,16 +124,23 @@
 #define OE_LO ___PORT(OE_PORT) &= ~(1<<OE_PIN)
 //#define OE_FAST_TOG ___PIN(OE_PORT) = (1<<OE_PIN)
 
-#define LA1_HI ___PORT(LA1_PORT) |= (1<<LA1_PIN)
-#define LA1_LO ___PORT(LA1_PORT) &= ~(1<<LA1_PIN)
-//#define LA1_FAST_TOG ___PIN(LA1_PORT) = (1<<LA1_PIN)
+#ifdef DRAM_SEPARATE_L_ADDR
+	#define LA1_HI ((void)0)
+	#define LA1_LO ((void)0)
+#else
+	#define LA1_HI ___PORT(LA1_PORT) |= (1<<LA1_PIN)
+	#define LA1_LO ___PORT(LA1_PORT) &= ~(1<<LA1_PIN)
+	//#define LA1_FAST_TOG ___PIN(LA1_PORT) = (1<<LA1_PIN)
+#endif
 
-#ifndef DRAM_HIGH_ADDRESS_PORT
+#ifdef DRAM_SEPARATE_H_ADDR
+	#define LA2_HI ((void)0)
+	#define LA2_LO ((void)0)
+#else
 	#define LA2_HI ___PORT(LA2_PORT) |= (1<<LA2_PIN)
 	#define LA2_LO ___PORT(LA2_PORT) &= ~(1<<LA2_PIN)
 	//#define LA2_FAST_TOG ___PIN(LA2_PORT) = (1<<LA2_PIN)
 #endif
-
 
 // for slower memories // delays are used in all parts of the code although only 
 // one of the functions requires one cycle delay for more correct timing with minimum 
@@ -126,7 +150,6 @@ inline void DramDelayHook(void)
 	//asm volatile("nop"::); // 1 cycle
 	//asm volatile("rjmp .+0"::); // 2 cycles
 }
-
 
 void RefreshTimerInt(void);
 void MemoryInit(void); 	// Initialization sequence depends on datasheet of target memory
