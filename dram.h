@@ -69,7 +69,7 @@
 ||defined(__AVR_ATmega168__)||defined(__AVR_ATmega168P__)||defined(__AVR_ATmega168PA__)||defined(__AVR_ATmega168PB__)\
 ||defined(__AVR_ATmega328__)||defined(__AVR_ATmega328P__)||defined(__AVR_ATmega328PB__)
 	#ifndef DRAM_FORCE_SLOW_STROBES
-		#define DRAM_FAST_TOGGLE // allow fast xor'ing outputs by writing to PINn registers // for burst sequences
+		#define DRAM_FAST_TOGGLE // allow fast xor'ing outputs by writing to PINn registers // used for burst sequences
 	#endif
 #endif
 
@@ -153,7 +153,7 @@ static inline void DramDelayHook(void);
 }
 
 void RefreshTimerInt(void);
-void MemoryInit(void); 	// Initialization sequence depends on datasheet of target memory
+void MemoryInit(void); // have to be called before enabling interrupts // Initialization sequence depends on datasheet of target memory
 
 #ifdef DRAM_LARGE_MEMORY_MODE
 	uint8_t DramDirectRead(uint16_t row, uint16_t column); // avoid expensive shift operations on address

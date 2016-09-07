@@ -19,6 +19,10 @@ void MemoryInit(void)
 #if defined(DRAM_LARGE_MEMORY_MODE) && defined(DRAM_SEPARATE_H_ADDR)
 	___DDR(ADDRH_PORT) |= ((1<<(DRAM_ADDRESS_PINS-8)) - 1); 
 #endif
+
+#ifdef DRAM_SEPARATE_L_ADDR
+	___DDR(ADDRL_PORT) = 0xff;
+#endif
 	
 	// can be merged into one call if using same port 
 	___DDR(RAS_PORT) |= (1<<RAS_PIN);
