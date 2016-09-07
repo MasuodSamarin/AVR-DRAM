@@ -1,7 +1,7 @@
 #ifndef DRAM_H_
 #define DRAM_H_
 
-#define DRAM_ADDRESS_PINS 8 // eg. 12 for 16MB memory
+#define DRAM_ADDRESS_PINS 12 // 8 for 64kB memory, 12 for 16MB memory
 #define DRAM_INIT_SEQUENCE_CYCLES 8 // check datasheet
 //#define DRAM_REFRESH_CYCLES 256 // set if not equally 2^DRAM_ADDRESS_PINS // can also be set to 256 if inlined refresh cycles multiple times in ISR for faster operation
 
@@ -142,10 +142,11 @@
 	//#define LA2_FAST_TOG ___PIN(LA2_PORT) = (1<<LA2_PIN)
 #endif
 
-// for slower memories // delays are used in all parts of the code although only 
-// one of the functions requires one cycle delay for more correct timing with minimum 
-// overhead can be obtained by experimental placing delays directly in the suspicious functions
-inline void DramDelayHook(void)  
+// for slower memories // delays are executed after CAS line goes low
+// more correct timing with minimum overhead can be obtained by experimental 
+// placing delays directly in the suspicious functions
+static inline void DramDelayHook(void) __attribute__((always_inline));
+static inline void DramDelayHook(void);
 {
 	//asm volatile("nop"::); // 1 cycle
 	//asm volatile("rjmp .+0"::); // 2 cycles
@@ -158,14 +159,20 @@ void MemoryInit(void); 	// Initialization sequence depends on datasheet of targe
 	uint8_t DramDirectRead(uint16_t row, uint16_t column); // avoid expensive shift operations on address
 	void DramDirectWrite(uint16_t row, uint16_t column, uint8_t dat); // avoid expensive shift operations on address
 	
-	uint8_t DramRead(uint32_t addr);
-	void DramWrite(uint32_t addr, uint8_t dat);
+	//static inline uint8_t DramRead(uint32_t addr) __attribute__((always_inline));
+	static inline uint8_t DramRead(uint32_t addr) { DramDirectRead((addr << (8 - (DRAM_ADDRESS_PINS - 8)) >> 16), addr); }
+	
+	//static inline void DramWrite(uint32_t addr, uint8_t dat) __attribute__((always_inline));
+	static inline void DramWrite(uint32_t addr, uint8_t dat) { DramDirectWrite((addr << (8 - (DRAM_ADDRESS_PINS - 8)) >> 16), addr); }
 	
 	void DramDirectPageRead(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst);
 	void DramDirectPageWrite(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst);
 	
-	void DramPageRead(uint32_t addr, uint16_t count, uint8_t *Dst);
-	void DramPageWrite(uint32_t addr, uint16_t count, uint8_t *Dst);
+	//static inline void DramPageRead(uint32_t addr, uint16_t count, uint8_t *Dst) __attribute__((always_inline));
+	static inline void DramPageRead(uint32_t addr, uint16_t count, uint8_t *Dst) { DramDirectPageRead((addr << (8 - (DRAM_ADDRESS_PINS - 8)) >> 16), addr); }
+	
+	//static inline void DramPageWrite(uint32_t addr, uint16_t count, uint8_t *Dst) __attribute__((always_inline));
+	static inline void DramPageWrite(uint32_t addr, uint16_t count, uint8_t *Dst) { DramDirectPageWrite((addr << (8 - (DRAM_ADDRESS_PINS - 8)) >> 16), addr); } 
 #else
 	uint8_t DramRead(uint16_t addr);
 	void DramWrite(uint16_t addr, uint8_t dat);
@@ -173,8 +180,11 @@ void MemoryInit(void); 	// Initialization sequence depends on datasheet of targe
 	void _DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst); // this function will read n + 1 bytes
 	void _DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst); // this function will write n + 1 bytes
 	
-	inline void DramPageRead(uint16_t addr, uint16_t count, uint8_t *Dst) { _DramPageRead(addr, count-1, Dst); }
-	inline void DramPageWrite(uint16_t addr, uint16_t count, uint8_t *Dst) { _DramPageWrite(addr, count-1, Dst); } 
+	static inline void DramPageRead(uint16_t addr, uint16_t count, uint8_t *Dst) __attribute__((always_inline));
+	static inline void DramPageRead(uint16_t addr, uint16_t count, uint8_t *Dst) { _DramPageRead(addr, count-1, Dst); }
+		
+	static inline void DramPageWrite(uint16_t addr, uint16_t count, uint8_t *Dst) __attribute__((always_inline));
+	static inline void DramPageWrite(uint16_t addr, uint16_t count, uint8_t *Dst) { _DramPageWrite(addr, count-1, Dst); } 
 #endif
 
 #endif /* DRAM_H_ */
