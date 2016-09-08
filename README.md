@@ -19,9 +19,9 @@ Before setting up memory several conditions must be met:
 - in case of using EDO memory (especially with FPM-read sequence), to prevent possible short circuits, address lines have to be separated from data lines (define DRAM_SEPARATE_L_ADDR)
 - if you prefer to have one latch less at a cost of half of the another port (pins 0,1,2 up to DRAM_ADDRESS_PINS - 8) define DRAM_SEPARATE_H_ADDR macro
 - if memory doesn't want to work correctly uncomment some nop's in DramDelayHook() or define DRAM_FORCE_SLOW_STROBES macro
+- All parallel ports/pins can be reused for other purposes (data, address, and latches (ADDRH on latch may need modification in code)), in this case all pins have to be set back to their output states before entering Dram* functions.
 
 #todo
 - rmw
 - DRAM_FAST_TOGGLE for more families than mega328
 - timmings
-- rdm
