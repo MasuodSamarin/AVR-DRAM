@@ -38,6 +38,8 @@ void MemoryInit(void)
 	___DDR(LA2_PORT) |= (1<<LA2_PIN);
 #endif
 	
+	//OE_HI;
+	//WE_HI;
 	CAS_HI;
 	RAS_HI;
 	
