@@ -15,7 +15,7 @@ Before setting up memory several conditions must be met:
 
 #optional
 - modify RefreshTimerInt() with corresponding DRAM_REFRESH_INTERRUPT macro for most optimal refresh peroid corresponding to datasheet
-(example code uses timer 0 with 256 prescaler and overflow interrupt wchich should be safe but not optimal)
+(example code uses timer 0 with 256 prescaler and overflow interrupt which should be safe but not optimal)
 - in case of using EDO memory (especially with FPM-read sequence), to prevent possible short circuits, address lines have to be separated from data lines (define DRAM_SEPARATE_L_ADDR)
 - if you prefer to have one latch less at a cost of half of the another port (pins 0,1,2 up to DRAM_ADDRESS_PINS - 8) define DRAM_SEPARATE_H_ADDR macro
 - if memory doesn't want to work correctly add some delays to DRAM_t*_WAITSTATE or define DRAM_FORCE_SLOW_STROBES macro
