@@ -8,7 +8,7 @@
 
 //#define DRAMTEST_VERBOSE
 
-bool QuickTest(uint32_t addr); // true if corruption
+uint8_t QuickTest(uint32_t addr); // true if corruption
 uint32_t WalkingOneTest(uint32_t memsize);
 uint32_t OwnAddressTest(uint32_t memsize);
 uint32_t FpmTest(uint32_t memsize, uint8_t pattern_A, uint8_t pattern_B);
@@ -31,7 +31,7 @@ void main(void)
 	}
 }
 
-bool QuickTest(uint32_t addr)
+uint8_t QuickTest(uint32_t addr)
 {
 	bool ThisByteIsCorrupted = 0;
 	uint8_t tmp;

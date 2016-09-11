@@ -7,8 +7,8 @@
 
 //#define DRAM_EDO_MODE
 
-//#define DRAM_SEPARATE_L_ADDR // separate low address port from data port // required for EDO mode operation // no LA1 required
-//#define DRAM_SEPARATE_H_ADDR // separate high address port (>64k memories) form L_ADDR  // no LA2 required
+//#define DRAM_SEPARATE_L_ADDR // separate low address port from data port // required for EDO mode // no LA1 required
+//#define DRAM_SEPARATE_H_ADDR // separate high address port (>64k memories) from L_ADDR  // no LA2 required
 
 //#define DRAM_FORCE_SLOW_STROBES // force 2 cycle sbi/cbi signalling instead of 1 cycle PINx hardware xor // can fix some memory timming issues
 
@@ -142,15 +142,22 @@
 	//#define LA2_FAST_TOG ___PIN(LA2_PORT) = (1<<LA2_PIN)
 #endif
 
-// for slower memories // delays are executed after CAS line goes low
-// more correct timing with minimum overhead can be obtained by experimental 
-// placing delays directly in the suspicious functions
-static inline void DramDelayHook(void) __attribute__((always_inline));
-static inline void DramDelayHook(void)
-{
-	//asm volatile("nop"::); // 1 cycle
-	//asm volatile("rjmp .+0"::); // 2 cycles
-}
+// optional waitstates for slower memories used in r/w functions
+// delays are applied after CAS line goes low
+// asm volatile("nop \n\t") - 1 cycle
+// asm volatile("rjmp .+0 \n\t") - 2 cycles
+// asm volatile("lpm \n\t":::"r0") - 3 cycles
+
+#define DRAM_tCAS_WAITSTATE asm volatile(" \n\t") // applied to write procedures
+#define DRAM_tCAC_WAITSTATE asm volatile(" \n\t") // applied to read procedures
+
+// inline assembly waitstates for refresh interrupt, using registers not allowed
+// "nop \n\t" - 1 cycle
+// "rjmp .+0 \n\t" - 2 cycle
+// "nop \n\t""rjmp .+0 \n\t" - 3 cycle
+
+#define DRAM_REFRESH_tRAS_WAITSTATE " \n\t"
+#define DRAM_REFRESH_tRP_WAITSTATE  " \n\t"
 
 void RefreshTimerInt(void);
 void MemoryInit(void); // have to be called before enabling interrupts // Initialization sequence depends on datasheet of target memory

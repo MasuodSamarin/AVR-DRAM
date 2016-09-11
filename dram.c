@@ -7,7 +7,7 @@
 void RefreshTimerInt(void)
 {
 	// timer 0 overflow used for example
-	// refresh peroid have to match with datasheet of the used memory (4-64 ms)
+	// refresh period have to match with datasheet of the used memory (4-64 ms)
 	
 	TCCR0B |= (1<<CS02); // 256 // 4 ms refresh period at 16 MHz
 	TIMSK0 |= (1<<TOIE0); // overflow
@@ -49,7 +49,7 @@ void MemoryInit(void)
 		CAS_LO;		// CAS lo
 		RAS_LO;		// RAS lo
 		
-		DramDelayHook();
+		asm volatile(DRAM_REFRESH_tRAS_WAITSTATE);
 			
 		CAS_HI;		// CAS hi
 		RAS_HI;	// RAS hi
@@ -105,7 +105,7 @@ void MemoryInit(void)
 			CAS_LO;
 			
 			___PORT(DATA_PORT) = 0x00; // clear pullups for the next latch-up and give 1 additional delay cycle
-			DramDelayHook();
+			DRAM_tCAC_WAITSTATE;
 			
 		#ifndef DRAM_EDO_MODE
 			asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock cycle - strongly Tcac dependent
@@ -167,7 +167,7 @@ void MemoryInit(void)
 
 			CAS_LO;
 		
-			DramDelayHook();
+			DRAM_tCAS_WAITSTATE;
 
 			CAS_HI;
 			RAS_HI;
@@ -227,7 +227,7 @@ void MemoryInit(void)
 				CAS_FAST_TOG_L;
 				
 				___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 additional delay cycle
-				DramDelayHook();
+				DRAM_tCAC_WAITSTATE;
 			
 			#ifndef DRAM_EDO_MODE
 				asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock cycle - strongly Tcac dependent
@@ -298,7 +298,7 @@ void MemoryInit(void)
 				
 				CAS_FAST_TOG_L;
 				
-				DramDelayHook();
+				DRAM_tCAS_WAITSTATE;
 				
 				CAS_FAST_TOG_H;
 			} 
@@ -343,7 +343,7 @@ void MemoryInit(void)
 			// Data appears at the data output pins of the memory device. The time at which the data appears depends on when RAS , CAS and OE went low, and when the address is supplied.
 		
 			___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 additional delay cycle
-			DramDelayHook();
+			DRAM_tCAC_WAITSTATE;
 		
 		#ifndef DRAM_EDO_MODE
 			asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock cycle - strongly Tcac dependent 
@@ -394,7 +394,7 @@ void MemoryInit(void)
 
 			CAS_LO;
 		
-			DramDelayHook();
+			DRAM_tCAS_WAITSTATE;
 
 			// Before the write cycle can be considered complete, CAS and RAS must return to their inactive states.
 		
@@ -434,7 +434,7 @@ void MemoryInit(void)
 				CAS_FAST_TOG_L;
 				
 				___PORT(DATA_PORT) = 0x00; //clear pullups for the next latch-up and give 1 additional delay cycle
-				DramDelayHook();
+				DRAM_tCAC_WAITSTATE;
 				
 			#ifndef DRAM_EDO_MODE
 				asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock cycle - strongly Tcac dependent
@@ -485,7 +485,7 @@ void MemoryInit(void)
 				
 				CAS_FAST_TOG_L;
 				
-				DramDelayHook();
+				DRAM_tCAS_WAITSTATE;
 				
 				CAS_FAST_TOG_H;
 			} while(i++ != count); // count--
@@ -497,21 +497,127 @@ void MemoryInit(void)
 		
 #endif // !DRAM_LARGE_MEMORY_MODE
 
-ISR(DRAM_REFRESH_INTERRUPT) // CAS before RAS refresh
-{
-#if DRAM_REFRESH_CYCLES <= 256
-	uint8_t i = (DRAM_REFRESH_CYCLES - 1);
-#else
-	uint16_t i = (DRAM_REFRESH_CYCLES - 1);
-#endif
-	do
+#ifndef DRAM_FAST_TOGGLE
+	ISR(DRAM_REFRESH_INTERRUPT) // CAS before RAS refresh
 	{
-		CAS_FAST_TOG_L;
-		RAS_FAST_TOG_L;
+	#if DRAM_REFRESH_CYCLES == 256
+		uint8_t i = (DRAM_REFRESH_CYCLES - 1);
+	#else
+		uint16_t i = (DRAM_REFRESH_CYCLES - 1);
+	#endif
+		do
+		{
+			CAS_FAST_TOG_L;
+			RAS_FAST_TOG_L;
 	
-		DramDelayHook();
+			asm volatile(DRAM_REFRESH_tRAS_WAITSTATE);
 	
-		CAS_FAST_TOG_H;
-		RAS_FAST_TOG_H;
-	} while(i--);
-}
+			CAS_FAST_TOG_H;
+			RAS_FAST_TOG_H;
+		} while(i--);
+	}
+#else
+	ISR(DRAM_REFRESH_INTERRUPT, ISR_NAKED)
+	{
+		asm volatile("\n\t"
+			"push	r0 \n\t"
+			"in		r0, __SREG__\n\t"
+			
+			"push	r16 \n\t"
+			"push	r17 \n\t"
+			"push	r18 \n\t"
+		
+		#if (DRAM_REFRESH_CYCLES >= 4096)
+			"push	r19 \n\t"
+			"ldi	r19, %M[refresh_multipler]\n\t"
+		#endif
+			
+			"ldi	r18, 0x00 \n\t"
+			"ldi	r17, %M[cas_tog_mask] \n\t"
+			"ldi	r16, %M[ras_tog_mask] \n\t"
+			
+		"DRAM_REFRESH_LOOP_%=:"
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRAS_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+		
+		#if (DRAM_REFRESH_CYCLES >= 512)
+			DRAM_REFRESH_tRP_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRAS_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+		#endif
+		#if (DRAM_REFRESH_CYCLES >= 1024)
+			DRAM_REFRESH_tRP_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRAS_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRP_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRAS_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+		#endif
+		#if (DRAM_REFRESH_CYCLES >= 2048)
+			DRAM_REFRESH_tRP_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRAS_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRP_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRAS_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRP_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRAS_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRP_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+			DRAM_REFRESH_tRAS_WAITSTATE
+			"out	%M[cas_PIN_input_reg], r17 \n\t"
+			"out	%M[ras_PIN_input_reg], r16 \n\t"
+		#endif
+		
+			"dec	r18 \n\t"
+			"brne	DRAM_REFRESH_LOOP_%= \n\t"
+			
+		#if (DRAM_REFRESH_CYCLES >= 4096)
+			"dec	r19 \n\t"
+			"brne	DRAM_REFRESH_LOOP_%= \n\t"
+		
+			"pop	r19 \n\t"
+		#endif
+			
+			"pop	r18 \n\t"
+			"pop	r17 \n\t"
+			"pop	r16 \n\t"
+			
+			"out	__SREG__, r0 \n\t"
+			"pop	r0 \n\t"
+			"reti \n\t"
+			
+			: /* output operands */
+			: /* input operands */
+			[ras_tog_mask]        "M" (1<<RAS_PIN),
+			[cas_tog_mask]        "M" (1<<CAS_PIN),
+			[ras_PIN_input_reg]   "I" (_SFR_IO_ADDR(___PIN(RAS_PORT))),
+			[cas_PIN_input_reg]   "I" (_SFR_IO_ADDR(___PIN(CAS_PORT))),
+			[refresh_multipler]   "M" (DRAM_REFRESH_CYCLES/(256*8))
+			/* no clobbers */
+		);
+	}
+#endif
