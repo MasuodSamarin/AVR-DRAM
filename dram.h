@@ -39,9 +39,9 @@
 	#define WE_PORT D // A,B,C,D ... port naming
 	#define WE_PIN 2 // 1,2,3,4 ... pin naming
 
-	#define OE_PORT D // A,B,C,D ... port naming
-	#define OE_PIN 3 // 1,2,3,4 ... pin naming
-
+	// not used anymore
+	//#define OE_PORT D // A,B,C,D ... port naming
+	//#define OE_PIN 3 // 1,2,3,4 ... pin naming
 
 	#define DATA_PORT B // A,B,C,D ... port naming // port used for data i/o and ADDRESSing
 
@@ -120,8 +120,9 @@
 #define WE_LO ___PORT(WE_PORT) &= ~(1<<WE_PIN)
 //#define WE_FAST_TOG ___PIN(WE_PORT) = (1<<WE_PIN)
 
-#define OE_HI ___PORT(OE_PORT) |= (1<<OE_PIN)
-#define OE_LO ___PORT(OE_PORT) &= ~(1<<OE_PIN)
+// not used anymore
+//#define OE_HI ___PORT(OE_PORT) |= (1<<OE_PIN)
+//#define OE_LO ___PORT(OE_PORT) &= ~(1<<OE_PIN)
 //#define OE_FAST_TOG ___PIN(OE_PORT) = (1<<OE_PIN)
 
 #ifdef DRAM_SEPARATE_L_ADDR

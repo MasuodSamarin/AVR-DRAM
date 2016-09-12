@@ -28,7 +28,7 @@ void MemoryInit(void)
 	___DDR(RAS_PORT) |= (1<<RAS_PIN);
 	___DDR(CAS_PORT) |= (1<<CAS_PIN);
 	___DDR(WE_PORT) |= (1<<WE_PIN);
-	___DDR(OE_PORT) |= (1<<OE_PIN);
+	//___DDR(OE_PORT) |= (1<<OE_PIN);
 	
 #ifndef DRAM_SEPARATE_L_ADDR
 	___DDR(LA1_PORT) |= (1<<LA1_PIN);
@@ -65,7 +65,7 @@ void MemoryInit(void)
 		uint8_t tmp;
 		
 		WE_HI;
-		OE_LO;
+		//OE_LO;
 		
 		LA1_HI;
 		LA2_HI;
@@ -127,7 +127,7 @@ void MemoryInit(void)
 	
 	void DramDirectWrite(uint16_t row, uint16_t column, uint8_t dat)
 	{
-		OE_HI;
+		//OE_HI;
 		WE_LO; 
 	
 		LA1_HI;
@@ -178,7 +178,7 @@ void MemoryInit(void)
 	void DramDirectPageRead(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst)
 	{
 		WE_HI;
-		OE_LO;
+		//OE_LO;
 		
 		LA1_HI;
 		LA2_HI;
@@ -256,7 +256,7 @@ void MemoryInit(void)
 	
 	void DramDirectPageWrite(uint16_t row, uint16_t column, uint16_t count, uint8_t *Dst)
 	{
-		OE_HI;
+		//OE_HI;
 		WE_LO;
 		
 		LA1_HI;
@@ -314,7 +314,7 @@ void MemoryInit(void)
 		uint8_t tmp;
 	
 		WE_HI;
-		OE_LO;
+		//OE_LO;
 	
 		LA1_HI;
 	
@@ -366,7 +366,7 @@ void MemoryInit(void)
 
 	void DramWrite(uint16_t addr, uint8_t dat)
 	{
-		OE_HI;
+		//OE_HI;
 		WE_LO; 
 	
 		LA1_HI;
@@ -406,7 +406,7 @@ void MemoryInit(void)
 	void _DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst)
 	{
 		WE_HI;
-		OE_LO;
+		//OE_LO;
 		
 	#ifdef DRAM_SEPARATE_L_ADDR
 		___DDR(DATA_PORT) = 0x00; //set port to input
@@ -463,7 +463,7 @@ void MemoryInit(void)
 	
 	void _DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst)
 	{
-		OE_HI;
+		//OE_HI;
 		WE_LO;
 		
 		ATOMIC_BLOCK(ATOMIC_RESTORESTATE)

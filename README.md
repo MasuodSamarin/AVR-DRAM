@@ -1,7 +1,7 @@
 #DRAM LIBRARY FOR AVR
 
 - linear addresing
-- can work from single 8 bit port + 6 control lines
+- can work from single 8 bit port + 5 control lines
 - support for EDO read sequences 
 - requires 8 bit (also 2x4, 4x2, 8x1) memories with CBR capability 
 
@@ -12,6 +12,7 @@ Before setting up memory several conditions must be met:
 - define DRAM_INIT_SEQUENCE_CYCLES to value given by the datasheet of used memory
 - define all control pins and full 8 bit port for data operation 
 - define DRAM_EDO_MODE if memory is EDO type
+- OE signal have to be tied to ground
 
 #optional
 - modify RefreshTimerInt() with corresponding DRAM_REFRESH_INTERRUPT macro for most optimal refresh peroid corresponding to datasheet
@@ -25,5 +26,4 @@ Before setting up memory several conditions must be met:
 - rmw
 - DRAM_FAST_TOGGLE for more families than mega328
 - timmings
-- simm 30 // no OE // parity bit // refresh 16 ms ? // assymetric ras/cas ? // assymetric refresh ?
-- no OE
+- simm 30 // parity bit // refresh 16 ms ? // assymetric ras/cas ? // assymetric refresh ?
