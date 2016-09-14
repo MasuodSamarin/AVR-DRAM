@@ -206,7 +206,10 @@ void MemoryInit(void)
 			
 			RAS_LO;
 			
-			for(uint16_t i = 0; i < count; i++)
+			uint16_t i = 0;
+			
+			//for(uint16_t i = 0; i < count; i++)
+			do 
 			{
 				LA1_HI;
 			#if defined(DRAM_SEPARATE_H_ADDR)
@@ -231,19 +234,19 @@ void MemoryInit(void)
 			
 			#ifndef DRAM_EDO_MODE
 				asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock cycle - strongly Tcac dependent
-				Dst[i] = ___PIN(DATA_PORT);
+				Dst[i++] = ___PIN(DATA_PORT);
 			#endif
 				
 				CAS_FAST_TOG_H;
 			
 			#ifdef DRAM_EDO_MODE
-				Dst[i] = ___PIN(DATA_PORT);
+				Dst[i++] = ___PIN(DATA_PORT);
 			#endif
 				
 			#ifndef DRAM_SEPARATE_L_ADDR
 				___DDR(DATA_PORT) = 0xff; // set back to output
 			#endif
-			} 
+			} while(--count);
 			
 			RAS_HI;
 			
@@ -280,7 +283,10 @@ void MemoryInit(void)
 			
 			RAS_LO;
 			
-			for(uint16_t i = 0; i < count; i++)
+			uint16_t i = 0;
+			
+			//for(uint16_t i = 0; i < count; i++)
+			do
 			{
 				LA1_HI;
 			#if defined(DRAM_SEPARATE_H_ADDR)
@@ -294,14 +300,14 @@ void MemoryInit(void)
 				___PORT(ADDRL_PORT) = (uint8_t)column++;
 				LA1_LO; // lock cas address
 				
-				___PORT(DATA_PORT) = Dst[i]; 
+				___PORT(DATA_PORT) = Dst[i++]; 
 				
 				CAS_FAST_TOG_L;
 				
 				DRAM_tCAS_WAITSTATE;
 				
 				CAS_FAST_TOG_H;
-			} 
+			} while(--count);
 			
 			RAS_HI;
 		}
@@ -403,7 +409,7 @@ void MemoryInit(void)
 		}
 	}
 	
-	void _DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst)
+	void DramPageRead(uint16_t addr, uint8_t count, uint8_t *Dst)
 	{
 		WE_HI;
 		//OE_LO;
@@ -418,10 +424,9 @@ void MemoryInit(void)
 			
 			RAS_LO;
 			
-			uint8_t i = 0;
-			
-			//for(int i = 0; i < count + 1; i++) // current implementation
-			do 
+			uint16_t i = 0; // uint8_t generates weird code
+		
+			do
 			{
 				LA1_HI;
 				___PORT(ADDRL_PORT) = (uint8_t)addr++;
@@ -438,19 +443,19 @@ void MemoryInit(void)
 				
 			#ifndef DRAM_EDO_MODE
 				asm volatile("nop"::); // valid data have to appear on the port before half of the last delay clock cycle - strongly Tcac dependent
-				Dst[i] = ___PIN(DATA_PORT);
+				Dst[i++] = ___PIN(DATA_PORT);
 			#endif
 				
 				CAS_FAST_TOG_H;
 				
 			#ifdef DRAM_EDO_MODE
-				Dst[i] = ___PIN(DATA_PORT);
+				Dst[i++] = ___PIN(DATA_PORT);
 			#endif
 				
 			#ifndef DRAM_SEPARATE_L_ADDR
 				___DDR(DATA_PORT) = 0xff; // set back to output
 			#endif
-			} while(i++ != count);
+			} while(--count);
 			
 			RAS_HI;
 			
@@ -461,7 +466,7 @@ void MemoryInit(void)
 		
 	}
 	
-	void _DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst)
+	void DramPageWrite(uint16_t addr, uint8_t count, uint8_t *Dst)
 	{
 		//OE_HI;
 		WE_LO;
@@ -472,23 +477,22 @@ void MemoryInit(void)
 			
 			RAS_LO;
 			
-			uint8_t i = 0;
+			uint16_t i = 0; // uint8_t generates weird code
 			
-			//for(int i = 0; i < count + 1; i++) // current implementation
-			do 
+			do
 			{
 				LA1_HI;
 				___PORT(ADDRL_PORT) = (uint8_t)addr++;
 				LA1_LO; // lock cas address
 				
-				___PORT(DATA_PORT) = Dst[i]; // i++
+				___PORT(DATA_PORT) = Dst[i++];
 				
 				CAS_FAST_TOG_L;
 				
 				DRAM_tCAS_WAITSTATE;
 				
 				CAS_FAST_TOG_H;
-			} while(i++ != count); // count--
+			} while(--count);
 			
 			RAS_HI;
 		}
