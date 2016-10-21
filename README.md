@@ -1,6 +1,6 @@
 #DRAM LIBRARY FOR AVR
 
-- linear addresing
+- linear addressing
 - can work from single 8 bit port + 5 control lines
 - support for EDO read sequences 
 - requires 8 bit (also 2x4, 4x2, 8x1) memories with CBR capability 
