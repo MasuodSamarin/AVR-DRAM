@@ -5,7 +5,7 @@
 - support for EDO read sequences 
 - requires 8 bit (also 2x4, 4x2, 8x1) memories with CBR refresh capability
 
-###SETUP
+##Setup
 Before setting up memory several conditions must be met:
 
 - define DRAM_ADDRESS_PINS to value corresponding with used memory (eg. 12 for 16MB simms - 2^2n)
@@ -14,7 +14,7 @@ Before setting up memory several conditions must be met:
 - define DRAM_EDO_MODE if memory is EDO type
 - OE signal have to be tied to ground
 
-###OPTIONAL
+##Optional
 - modify RefreshTimerInt() with corresponding DRAM_REFRESH_INTERRUPT macro for most optimal refresh peroid corresponding to datasheet
 (example code uses timer 0 with 256 prescaler and overflow interrupt which should be safe but not optimal)
 - in case of using EDO memory (especially with FPM-read sequence), to prevent possible short circuits, address lines have to be separated from data lines (define DRAM_SEPARATE_L_ADDR)
@@ -22,7 +22,7 @@ Before setting up memory several conditions must be met:
 - if memory doesn't want to work correctly add some delays to DRAM_t*_WAITSTATE or define DRAM_FORCE_SLOW_STROBES macro
 - All parallel ports/pins can be reused for other purposes (data, address, and latches (ADDRH on latch may need modification in code)), in this case all pins have to be set back to their output states before entering Dram* functions.
 
-###TODO
+##Todo
 - rmw
 - DRAM_FAST_TOGGLE for more families than mega328
 - timmings
