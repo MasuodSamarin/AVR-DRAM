@@ -621,14 +621,14 @@ void MemoryInit(void)
 			"pop	r0 \n\t"
 			"reti \n\t"
 			
-			: /* output operands */
-			: /* input operands */
+			: // output operands
+			: // input operands
 			[ras_tog_mask]        "M" (1<<RAS_PIN),
 			[cas_tog_mask]        "M" (1<<CAS_PIN),
 			[ras_PIN_input_reg]   "I" (_SFR_IO_ADDR(___PIN(RAS_PORT))),
 			[cas_PIN_input_reg]   "I" (_SFR_IO_ADDR(___PIN(CAS_PORT))),
 			[refresh_multipler]   "M" (DRAM_REFRESH_CYCLES/(256*8))
-			/* no clobbers */
+			// no clobbers
 		);
 	}
 #endif
