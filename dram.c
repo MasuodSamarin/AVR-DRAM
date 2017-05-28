@@ -531,15 +531,17 @@ void MemoryInit(void)
 			"push	r17 \n\t"
 			"push	r18 \n\t"
 		
-		#if (DRAM_REFRESH_CYCLES >= 4096)
+		#if (DRAM_REFRESH_CYCLES == 4096)
+			"clh \n\t" // clear H to make 9 bit counter
+		#elif (DRAM_REFRESH_CYCLES > 4096)
 			"push	r19 \n\t"
-			"ldi	r19, %M[refresh_multipler]\n\t"
+			"ldi	r19, %M[refresh_multipler] \n\t"
 		#endif
 			
-			"ldi	r18, 0x00 \n\t"
-			"ldi	r17, %M[cas_tog_mask] \n\t"
 			"ldi	r16, %M[ras_tog_mask] \n\t"
-			
+			"ldi	r17, %M[cas_tog_mask] \n\t"
+			"ldi	r18, 0x00 \n\t"
+		
 		"DRAM_REFRESH_LOOP_%=:"
 			"out	%M[cas_PIN_input_reg], r17 \n\t"
 			"out	%M[ras_PIN_input_reg], r16 \n\t"
@@ -598,8 +600,13 @@ void MemoryInit(void)
 		
 			"dec	r18 \n\t"
 			"brne	DRAM_REFRESH_LOOP_%= \n\t"
-			
-		#if (DRAM_REFRESH_CYCLES >= 4096)
+		
+		#if (DRAM_REFRESH_CYCLES == 4096)
+			"brhs DRAM_FINISH_LOOP_%= \n\t" // if refresh code was executed twice
+			"seh \n\t"
+			"rjmp DRAM_REFRESH_LOOP_%= \n\t"
+		"DRAM_FINISH_LOOP_%=:"
+		#elif (DRAM_REFRESH_CYCLES > 4096)
 			"dec	r19 \n\t"
 			"brne	DRAM_REFRESH_LOOP_%= \n\t"
 		

@@ -1,16 +1,16 @@
 #ifndef DRAM_H_
 #define DRAM_H_
 
-#define DRAM_ADDRESS_PINS 8 // 8 for 64kB memory, 12 for 16MB memory
+#define DRAM_ADDRESS_PINS 12 // 8 for 64kB memory, 12 for 16MB memory
 #define DRAM_INIT_SEQUENCE_CYCLES 8 // check datasheet
 //#define DRAM_REFRESH_CYCLES 256 // set if not equally 2^DRAM_ADDRESS_PINS // can also be set to 256 if inlined refresh cycles multiple times in ISR for faster operation
 
-//#define DRAM_EDO_MODE
+//#define DRAM_EDO_MODE // allows for faster read cycle // compatible with EDO memories only
 
 //#define DRAM_SEPARATE_L_ADDR // separate low address port from data port // required for EDO mode // no LA1 required
 //#define DRAM_SEPARATE_H_ADDR // separate high address port (>64k memories) from L_ADDR  // no LA2 required
 
-//#define DRAM_FORCE_SLOW_STROBES // force 2 cycle sbi/cbi signalling instead of 1 cycle PINx hardware xor // can fix some memory timming issues
+//#define DRAM_FORCE_SLOW_STROBES // force 2 cycle sbi/cbi signaling instead of 1 cycle PINx hardware xor // can fix some memory timming issues without adding waitstates
 
 #define DRAM_REFRESH_INTERRUPT TIMER0_OVF_vect // corresponding to timer initialized in RefreshTimerInt()
 
