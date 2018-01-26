@@ -24,6 +24,6 @@ Before setting up memory several conditions must be met:
 
 ## Todo
 - rmw
-- DRAM_FAST_TOGGLE for more families than mega328
+- DRAM_FAST_TOGGLE for more families than mega328/2560/1284
 - timmings
 - simm 30 // parity bit // refresh 16 ms ? // assymetric ras/cas ? // assymetric refresh ?
